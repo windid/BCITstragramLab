@@ -24,21 +24,25 @@ const grayScale = (entry, pathOut) => {
   });
 };
 
-const promises = [];
+const main = (pathIn, pathOut) => {
+  const promises = [];
 
-fs.createReadStream('./myfile.zip')
-  .pipe(unzipper.Parse()).on('entry', (entry) => {
-    const fileName = entry.path;
-    if (path.dirname(fileName) === '.' && path.extname(fileName) === '.png') {
-      console.log('Processing:', fileName);
-      promises.push(grayScale(entry, path.join('./grayscaled', fileName)))
-    } else {
-      entry.autodrain();
-    }
-  }).on('finish', () => {
-    console.log('Unzipped')
-    Promise.all(promises)
-      .then(() => console.log('All done!'))
-      .catch((err) => console.log(err));
-  })
-  .on('error', (err) => console.log(err));
+  fs.createReadStream(pathIn)
+    .pipe(unzipper.Parse()).on('entry', (entry) => {
+      const fileName = entry.path;
+      if (path.dirname(fileName) === '.' && path.extname(fileName) === '.png') {
+        console.log('Unzipped:', fileName);
+        promises.push(grayScale(entry, path.join(pathOut, fileName)))
+      } else {
+        entry.autodrain();
+      }
+    }).on('finish', () => {
+      console.log('All unzipped')
+      Promise.all(promises)
+        .then(() => console.log('All done!'))
+        .catch((err) => console.log(err));
+    })
+    .on('error', (err) => console.log(err));
+}
+
+main('./myfile.zip', './grayscaled')
