@@ -50,7 +50,7 @@ const grayScale = (pathIn, pathOut) => {
   return new Promise((resolve, reject) => {
     fs.createReadStream(pathIn)
       .on("error", (err) => reject(err))
-      .pipe(new PNG({ filterType: 4 }))
+      .pipe(new PNG())
       .on("parsed", function () {
         for (let i = 0; i < this.data.length; i += 4) {
           const avg = (this.data[i] + this.data[i + 1] + this.data[i + 2]) / 3;

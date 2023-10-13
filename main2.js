@@ -24,42 +24,18 @@ const grayScale = (fileStream, pathOut) => {
   });
 };
 
-// Approach A: wait all files unzipped before processing them, but more readable.
+const unzip = (pathIn) => unzipper.Open.file(pathIn).then((d) => d.files);
 
-const approachA = (pathIn, pathOut) => {
-  const unzip = (pathIn) => unzipper.Open.file(pathIn).then((d) => d.files);
+const filterFn = (file) => path.dirname(file.path) === '.' && path.extname(file.path) === '.png';
 
-  const filterFn = (file) => path.dirname(file.path) === '.' && path.extname(file.path) === '.png';
+const mapFn = (file) => grayScale(file.stream(), path.join('./grayscaled', file.path));
 
-  const mapFn = (file) => grayScale(file.stream(), path.join(pathOut, file.path));
-
-  unzip(pathIn)
-    .then((files) => Promise.all(files.filter(filterFn).map(mapFn)))
-    .then(() => console.log('All done!'))
-    .catch((err) => console.log(err));
-}
-
-// Approach B: don't need to wait all files unzipped before processing them.
-
-const approachB = (pathIn, pathOut) => {
-  const promises = [];
-
-  fs.createReadStream(pathIn)
-    .pipe(unzipper.Parse()).on('entry', (entry) => {
-      const fileName = entry.path;
-      if (path.dirname(fileName) === '.' && path.extname(fileName) === '.png') {
-        promises.push(grayScale(entry, path.join(pathOut, fileName)))
-      } else {
-        entry.autodrain();
-      }
-    }).on('finish', () => {
-      Promise.all(promises)
-        .then(() => console.log('All done!'))
-        .catch((err) => console.log(err));
-    })
-    .on('error', (err) => console.log(err));
-};
-
-
-const approach = process.argv[2] === 'A' ? approachA : approachB
-approach('./myfile.zip', './grayscaled')
+const timeStart = Date.now();
+unzip('myfile.zip')
+  .then((files) => Promise.all(files.filter(filterFn).map(mapFn)))
+  .then(() => {
+    console.log('All done!');
+    const timeEnd = Date.now();
+    console.log(`Time elapsed: ${timeEnd - timeStart} ms`)
+  })
+  .catch((err) => console.log(err));
