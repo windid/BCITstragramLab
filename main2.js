@@ -6,9 +6,9 @@ const path = require('path');
 // This implementation is trying to reduce IO ops by skipping the step of writing the unzipped files to disk.
 // Instead, I pipe the unzipped files directly to the grayscale function.
 
-const grayScale = (entry, pathOut) => {
+const grayScale = (fileStream, pathOut) => {
   return new Promise((resolve, reject) => {
-    entry
+    fileStream
       .pipe(new PNG({ filterType: 4 }))
       .on("parsed", function () {
         for (let i = 0; i < this.data.length; i += 4) {
@@ -23,6 +23,23 @@ const grayScale = (entry, pathOut) => {
       .on("error", (err) => reject(err));
   });
 };
+
+// Approach A, wait all files unzipped before processing them, but more readable.
+
+const unzip = (pathIn) => unzipper.Open.file(pathIn).then((d) => d.files);
+
+const filterFn = (file) => path.dirname(file.path) === '.' && path.extname(file.path) === '.png';
+
+const mapFn = (file) => grayScale(file.stream(), path.join('./grayscaled', file.path));
+
+unzip('./myfile.zip').then((files) => {
+  return Promise.all(files.filter(filterFn).map(mapFn))
+})
+.then(() => console.log('All done!'))
+.catch((err) => console.log(err));
+
+
+// Approach B, don't need to wait all files unzipped before processing them.
 
 const main = (pathIn, pathOut) => {
   const promises = [];
@@ -43,6 +60,6 @@ const main = (pathIn, pathOut) => {
         .catch((err) => console.log(err));
     })
     .on('error', (err) => console.log(err));
-}
+};
 
-main('./myfile.zip', './grayscaled')
+// main('./myfile.zip', './grayscaled');
