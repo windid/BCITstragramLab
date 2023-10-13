@@ -6,6 +6,9 @@ const path = require('path');
 // This implementation is trying to reduce IO ops by skipping the step of writing the unzipped files to disk.
 // Instead, I pipe the unzipped files directly to the grayscale function.
 
+const zipFilePath = path.join(__dirname, "myfile.zip");
+const pathProcessed = path.join(__dirname, "grayscaled");
+
 const grayScale = (fileStream, pathOut) => {
   return new Promise((resolve, reject) => {
     fileStream
@@ -24,15 +27,14 @@ const grayScale = (fileStream, pathOut) => {
   });
 };
 
-const unzip = (pathIn) => unzipper.Open.file(pathIn).then((d) => d.files);
+const timeStart = Date.now();
 
 const filterFn = (file) => path.dirname(file.path) === '.' && path.extname(file.path) === '.png';
 
-const mapFn = (file) => grayScale(file.stream(), path.join('./grayscaled', file.path));
+const mapFn = (file) => grayScale(file.stream(), path.join(pathProcessed, file.path));
 
-const timeStart = Date.now();
-unzip('myfile.zip')
-  .then((files) => Promise.all(files.filter(filterFn).map(mapFn)))
+unzipper.Open.file(zipFilePath)
+  .then((d) => Promise.all(d.files.filter(filterFn).map(mapFn)))
   .then(() => {
     console.log('All done!');
     const timeEnd = Date.now();
