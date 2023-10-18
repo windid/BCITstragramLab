@@ -21,7 +21,7 @@ const unzipper = require("unzipper"),
  * @return {promise}
  */
 const unzip = (pathIn, pathOut) => {
-  return unzipper.Open.file(pathIn).then((d) => d.extract({ path: pathOut }))
+  return unzipper.Open.file(pathIn).then((d) => d.extract({ path: pathOut }));
 };
 
 /**
